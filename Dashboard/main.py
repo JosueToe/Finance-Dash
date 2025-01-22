@@ -5,7 +5,8 @@ from functions.goal_functions import add_financial_goal
 from functions.expense_functions import add_expense
 from functions.dashboard_functions import display_dashboard
 from functions.backup_functions import backup_database, restore_database
-from functions.report_functions import expense_breakdown, cash_flow_report
+from functions.report_functions import expense_breakdown, cash_flow_report, record_net_worth, net_worth_trend
+from functions.edit_delete_functions import  edit_bank_account, delete_bank_account
 
 def main_menu():
     print("Welcome to the Finance and Budgeting Dashboard!")
@@ -21,7 +22,11 @@ def main_menu():
         print("8. Restore Database")
         print("9. View Expense Breakdown")
         print("10. View Cash Flow Report")
-        print("11. Exit")
+        print("11. Record Net Worth")  # Corrected description
+        print("12. View Net Worth Trend")  # Corrected description
+        print("13. Edit Bank Account")
+        print("14. Delete Bank Account")
+        print("15. Exit")
 
         choice = input("Choose an option: ")
         if choice == "1":
@@ -44,11 +49,20 @@ def main_menu():
             expense_breakdown()
         elif choice == "10":
             cash_flow_report()
-        elif choice == "11":
+        elif choice == "11":  # Record net worth
+            record_net_worth()
+        elif choice == "12":  # View net worth trend
+            net_worth_trend()
+        elif choice == "13":
+            edit_bank_account()
+        elif choice == "14":
+            delete_bank_account()
+        elif choice == "15":
             print("Goodbye!")
             break
         else:
             print("Invalid choice. Please try again.")
+
 
 if __name__ == "__main__":
     main_menu()
