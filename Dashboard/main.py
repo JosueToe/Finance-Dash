@@ -1,16 +1,21 @@
-from functions.user_functions import add_bank_account
-from functions.stock_functions import add_stock
-from functions.salary_functions import add_salary
-from functions.goal_functions import add_financial_goal
-from functions.expense_functions import add_expense
-from functions.dashboard_functions import display_dashboard
-from functions.backup_functions import backup_database, restore_database
-from functions.report_functions import expense_breakdown, cash_flow_report, record_net_worth, net_worth_trend
-from functions.edit_delete_functions import  edit_bank_account, delete_bank_account
+from functions.user_functions import add_bank_account  # Import function to add a bank account.
+from functions.stock_functions import add_stock  # Import function to add stock data.
+from functions.salary_functions import add_salary  # Import function to add salary details.
+from functions.goal_functions import add_financial_goal  # Import function to set a financial goal.
+from functions.expense_functions import add_expense  # Import function to log an expense.
+from functions.dashboard_functions import display_dashboard  # Import function to view the dashboard.
+from functions.backup_functions import backup_database, restore_database  # Import functions to backup and restore the database.
+from functions.report_functions import expense_breakdown, cash_flow_report, record_net_worth, net_worth_trend  # Import functions for financial reports.
+from functions.edit_delete_functions import edit_bank_account, delete_bank_account  # Import functions to edit or delete bank accounts.
 
 def main_menu():
+    """
+    Displays the main menu for the Finance and Budgeting Dashboard application.
+    Users can navigate through various options to manage their financial data.
+    """
     print("Welcome to the Finance and Budgeting Dashboard!")
     while True:
+        # Display menu options.
         print("\nMain Menu:")
         print("1. Add Bank Account")
         print("2. Add Stock")
@@ -22,49 +27,49 @@ def main_menu():
         print("8. Restore Database")
         print("9. View Expense Breakdown")
         print("10. View Cash Flow Report")
-        print("11. Record Net Worth")  # Corrected description
-        print("12. View Net Worth Trend")  # Corrected description
+        print("11. Record Net Worth")  # Option to record net worth.
+        print("12. View Net Worth Trend")  # Option to view net worth over time.
         print("13. Edit Bank Account")
         print("14. Delete Bank Account")
         print("15. Exit")
 
+        # Get the user's choice.
         choice = input("Choose an option: ")
         if choice == "1":
-            add_bank_account()
+            add_bank_account()  # Call function to add a bank account.
         elif choice == "2":
-            add_stock()
+            add_stock()  # Call function to add stock details.
         elif choice == "3":
-            add_salary()
+            add_salary()  # Call function to add salary information.
         elif choice == "4":
-            add_financial_goal()
+            add_financial_goal()  # Call function to set a financial goal.
         elif choice == "5":
-            add_expense()
+            add_expense()  # Call function to log an expense.
         elif choice == "6":
-            display_dashboard()
+            display_dashboard()  # Call function to display the financial dashboard.
         elif choice == "7":
-            backup_database()
+            backup_database()  # Call function to backup the database.
         elif choice == "8":
-            restore_database()
+            restore_database()  # Call function to restore the database from a backup.
         elif choice == "9":
-            expense_breakdown()
+            expense_breakdown()  # Call function to view expense breakdown.
         elif choice == "10":
-            cash_flow_report()
-        elif choice == "11":  # Record net worth
-            record_net_worth()
-        elif choice == "12":  # View net worth trend
-            net_worth_trend()
+            cash_flow_report()  # Call function to view cash flow report.
+        elif choice == "11":
+            record_net_worth()  # Call function to record the user's net worth.
+        elif choice == "12":
+            net_worth_trend()  # Call function to view net worth trend over time.
         elif choice == "13":
-            edit_bank_account()
+            edit_bank_account()  # Call function to edit bank account details.
         elif choice == "14":
-            delete_bank_account()
+            delete_bank_account()  # Call function to delete a bank account.
         elif choice == "15":
-            print("Goodbye!")
+            print("Goodbye!")  # Exit the application.
             break
         else:
+            # Handle invalid input.
             print("Invalid choice. Please try again.")
 
-
+# Check if the script is run directly.
 if __name__ == "__main__":
-    main_menu()
-# this is tony first comment
-# Hello tony this is a test comment!
+    main_menu()  # Start the main menu of the application.

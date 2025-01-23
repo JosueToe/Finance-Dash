@@ -1,52 +1,55 @@
-import sqlite3
-from datetime import datetime
+import sqlite3  # Import SQLite library to interact with the database.
+from datetime import datetime  # Import datetime for date-related calculations.
 
 def calculate_net_worth():
+    # Connect to the database where financial data is stored.
     connection = sqlite3.connect('database/finance_dashboard.db')
-    cursor = connection.cursor()
+    cursor = connection.cursor()  # Cursor is used to execute SQL commands.
 
     try:
-        # Total bank balances
+        # Calculate the total balance from all bank accounts.
         cursor.execute("SELECT SUM(balance) FROM bank_accounts")
-        total_bank = cursor.fetchone()[0] or 0.0
+        total_bank = cursor.fetchone()[0] or 0.0  # Default to 0 if no records are found.
 
-        # Total stock value
+        # Calculate the total stock value by multiplying shares and their current value.
         cursor.execute("SELECT SUM(shares * current_value) FROM stocks")
-        total_stocks = cursor.fetchone()[0] or 0.0
+        total_stocks = cursor.fetchone()[0] or 0.0  # Default to 0 if no records are found.
 
-        # Total monthly expenses
+        # Calculate total monthly expenses based on their frequency.
         cursor.execute("SELECT frequency, amount FROM expenses")
-        expenses = cursor.fetchall()
+        expenses = cursor.fetchall()  # Fetch all expense records.
         total_monthly_expenses = 0.0
         for frequency, amount in expenses:
             if frequency == 'weekly':
-                total_monthly_expenses += amount * 4  # Approximate 4 weeks in a month
+                total_monthly_expenses += amount * 4  # Multiply by 4 for weekly expenses.
             elif frequency == 'biweekly':
-                total_monthly_expenses += amount * 2  # Approximate 2 biweeks in a month
+                total_monthly_expenses += amount * 2  # Multiply by 2 for biweekly expenses.
             elif frequency == 'monthly':
-                total_monthly_expenses += amount
+                total_monthly_expenses += amount  # Use the amount directly for monthly expenses.
 
-        # Total monthly income
+        # Calculate total monthly income by summing up biweekly salaries.
         cursor.execute("SELECT amount FROM salary")
-        salaries = cursor.fetchall()
-        total_monthly_income = sum([salary[0] * 2 for salary in salaries])  # Assuming biweekly salary
+        salaries = cursor.fetchall()  # Fetch all salary records.
+        total_monthly_income = sum([salary[0] * 2 for salary in salaries])  # Assuming biweekly salary.
 
-        # Net worth calculation
+        # Calculate the net worth: total bank + total stocks - total expenses.
         total_net_worth = total_bank + total_stocks - total_monthly_expenses
 
-        # Financial goal progress
+        # Retrieve the user's financial goal (if any) and calculate progress.
         cursor.execute("SELECT net_worth_target, target_date FROM goals ORDER BY goal_id DESC LIMIT 1")
-        goal = cursor.fetchone()
+        goal = cursor.fetchone()  # Get the most recent financial goal.
         if goal:
             net_worth_target, target_date = goal
+            # Calculate the percentage progress toward the goal.
             progress_percentage = (total_net_worth / net_worth_target) * 100 if net_worth_target else 0
+            # Calculate the number of days remaining to achieve the goal.
             days_remaining = (datetime.strptime(target_date, "%Y-%m-%d").date() - datetime.today().date()).days
         else:
             net_worth_target = None
             progress_percentage = None
             days_remaining = None
 
-        # Return data as a dictionary
+        # Return the calculated data as a dictionary for further use.
         return {
             "total_bank": total_bank,
             "total_stocks": total_stocks,
@@ -59,18 +62,21 @@ def calculate_net_worth():
         }
 
     except sqlite3.Error as e:
+        # Handle and print any database-related errors.
         print("Error retrieving dashboard data:", e)
         return None
     finally:
+        # Ensure the database connection is always closed.
         connection.close()
 
-
 def display_dashboard():
+    # Fetch the net worth data calculated by the `calculate_net_worth` function.
     dashboard_data = calculate_net_worth()
-    if dashboard_data is None:
+    if dashboard_data is None:  # Check if an error occurred during the calculation.
         print("Unable to display dashboard due to an error.")
         return
 
+    # Display the financial dashboard to the user.
     print("\n===== Financial Dashboard =====")
     print(f"Total Bank Balances: ${dashboard_data['total_bank']:.2f}")
     print(f"Total Stock Value: ${dashboard_data['total_stocks']:.2f}")
@@ -79,7 +85,7 @@ def display_dashboard():
     print(f"Total Monthly Expenses: ${dashboard_data['total_monthly_expenses']:.2f}")
     print(f"Net Monthly Cash Flow: ${dashboard_data['total_monthly_income'] - dashboard_data['total_monthly_expenses']:.2f}")
 
-    if dashboard_data['net_worth_target'] is not None:
+    if dashboard_data['net_worth_target'] is not None:  # Check if a financial goal is set.
         print("\nFinancial Goal:")
         print(f"  Target Net Worth: ${dashboard_data['net_worth_target']:.2f}")
         print(f"  Current Progress: {dashboard_data['progress_percentage']:.2f}%")
