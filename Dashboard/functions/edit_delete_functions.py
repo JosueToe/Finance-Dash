@@ -65,3 +65,270 @@ def delete_bank_account():
     finally:
         # Ensure the database connection is always closed.
         connection.close()
+
+def edit_stock():
+    """
+    Edit an existing stock entry.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing stocks
+        cursor.execute("SELECT stock_id, stock_name, shares, current_value FROM stocks")
+        stocks = cursor.fetchall()
+        print("\n===== Stocks =====")
+        for stock_id, stock_name, shares, current_value in stocks:
+            print(f"ID: {stock_id}, Name: {stock_name}, Shares: {shares:.2f}, Value: ${current_value:.2f}")
+
+        # Select stock to edit
+        stock_id = input("\nEnter the ID of the stock to edit (or type 'cancel' to go back): ")
+        if stock_id.lower() == 'cancel':
+            return
+
+        # Update stock details
+        new_name = input("Enter new stock name: ").capitalize()
+        new_shares = input("Enter new number of shares: ")
+        new_value = input("Enter new current value per share: ")
+
+        cursor.execute("""
+            UPDATE stocks
+            SET stock_name = ?, shares = ?, current_value = ?
+            WHERE stock_id = ?
+        """, (new_name, float(new_shares), float(new_value), stock_id))
+        connection.commit()
+        print("Stock updated successfully!")
+    except sqlite3.Error as e:
+        print("Error updating stock:", e)
+    finally:
+        connection.close()
+
+
+def delete_stock():
+    """
+    Delete a stock entry by its ID.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing stocks
+        cursor.execute("SELECT stock_id, stock_name, shares, current_value FROM stocks")
+        stocks = cursor.fetchall()
+        print("\n===== Stocks =====")
+        for stock_id, stock_name, shares, current_value in stocks:
+            print(f"ID: {stock_id}, Name: {stock_name}, Shares: {shares:.2f}, Value: ${current_value:.2f}")
+
+        # Select stock to delete
+        stock_id = input("\nEnter the ID of the stock to delete (or type 'cancel' to go back): ")
+        if stock_id.lower() == 'cancel':
+            return
+
+        cursor.execute("DELETE FROM stocks WHERE stock_id = ?", (stock_id,))
+        connection.commit()
+        print("Stock deleted successfully!")
+    except sqlite3.Error as e:
+        print("Error deleting stock:", e)
+    finally:
+        connection.close()
+
+def edit_expense():
+    """
+    Edit an existing expense entry.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing expenses
+        cursor.execute("SELECT expense_id, name, category, frequency, amount FROM expenses")
+        expenses = cursor.fetchall()
+        print("\n===== Expenses =====")
+        for expense_id, name, category, frequency, amount in expenses:
+            print(f"ID: {expense_id}, Name: {name}, Category: {category}, Frequency: {frequency}, Amount: ${amount:.2f}")
+
+        # Select expense to edit
+        expense_id = input("\nEnter the ID of the expense to edit (or type 'cancel' to go back): ")
+        if expense_id.lower() == 'cancel':
+            return
+
+        # Update expense details
+        new_name = input("Enter new expense name: ").capitalize()
+        new_category = input("Enter new category: ").capitalize()
+        new_frequency = input("Enter new frequency (weekly/biweekly/monthly): ").lower()
+        new_amount = input("Enter new amount: ")
+
+        cursor.execute("""
+            UPDATE expenses
+            SET name = ?, category = ?, frequency = ?, amount = ?
+            WHERE expense_id = ?
+        """, (new_name, new_category, new_frequency, float(new_amount), expense_id))
+        connection.commit()
+        print("Expense updated successfully!")
+    except sqlite3.Error as e:
+        print("Error updating expense:", e)
+    finally:
+        connection.close()
+
+
+def delete_expense():
+    """
+    Delete an expense entry by its ID.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing expenses
+        cursor.execute("SELECT expense_id, name, category, frequency, amount FROM expenses")
+        expenses = cursor.fetchall()
+        print("\n===== Expenses =====")
+        for expense_id, name, category, frequency, amount in expenses:
+            print(f"ID: {expense_id}, Name: {name}, Category: {category}, Frequency: {frequency}, Amount: ${amount:.2f}")
+
+        # Select expense to delete
+        expense_id = input("\nEnter the ID of the expense to delete (or type 'cancel' to go back): ")
+        if expense_id.lower() == 'cancel':
+            return
+
+        cursor.execute("DELETE FROM expenses WHERE expense_id = ?", (expense_id,))
+        connection.commit()
+        print("Expense deleted successfully!")
+    except sqlite3.Error as e:
+        print("Error deleting expense:", e)
+    finally:
+        connection.close()
+
+def edit_salary():
+    """
+    Edit an existing salary entry.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing salaries
+        cursor.execute("SELECT salary_id, amount, frequency, next_payment_date FROM salary")
+        salaries = cursor.fetchall()
+        print("\n===== Salaries =====")
+        for salary_id, amount, frequency, next_payment_date in salaries:
+            print(f"ID: {salary_id}, Amount: ${amount:.2f}, Frequency: {frequency}, Next Payment: {next_payment_date}")
+
+        # Select salary to edit
+        salary_id = input("\nEnter the ID of the salary to edit (or type 'cancel' to go back): ")
+        if salary_id.lower() == 'cancel':
+            return
+
+        # Update salary details
+        new_amount = input("Enter new salary amount: ")
+        new_frequency = input("Enter new frequency (biweekly/monthly): ").lower()
+        new_date = input("Enter new next payment date (YYYY-MM-DD): ")
+
+        cursor.execute("""
+            UPDATE salary
+            SET amount = ?, frequency = ?, next_payment_date = ?
+            WHERE salary_id = ?
+        """, (float(new_amount), new_frequency, new_date, salary_id))
+        connection.commit()
+        print("Salary updated successfully!")
+    except sqlite3.Error as e:
+        print("Error updating salary:", e)
+    finally:
+        connection.close()
+
+
+def delete_salary():
+    """
+    Delete a salary entry by its ID.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing salaries
+        cursor.execute("SELECT salary_id, amount, frequency, next_payment_date FROM salary")
+        salaries = cursor.fetchall()
+        print("\n===== Salaries =====")
+        for salary_id, amount, frequency, next_payment_date in salaries:
+            print(f"ID: {salary_id}, Amount: ${amount:.2f}, Frequency: {frequency}, Next Payment: {next_payment_date}")
+
+        # Select salary to delete
+        salary_id = input("\nEnter the ID of the salary to delete (or type 'cancel' to go back): ")
+        if salary_id.lower() == 'cancel':
+            return
+
+        cursor.execute("DELETE FROM salary WHERE salary_id = ?", (salary_id,))
+        connection.commit()
+        print("Salary deleted successfully!")
+    except sqlite3.Error as e:
+        print("Error deleting salary:", e)
+    finally:
+        connection.close()
+
+import sqlite3
+
+def edit_financial_goal():
+    """
+    Edit an existing financial goal entry.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing goals
+        cursor.execute("SELECT goal_id, net_worth_target, target_date FROM goals")
+        goals = cursor.fetchall()
+        print("\n===== Financial Goals =====")
+        for goal_id, net_worth_target, target_date in goals:
+            print(f"ID: {goal_id}, Target Net Worth: ${net_worth_target:.2f}, Target Date: {target_date}")
+
+        # Select goal to edit
+        goal_id = input("\nEnter the ID of the goal to edit (or type 'cancel' to go back): ")
+        if goal_id.lower() == 'cancel':
+            return
+
+        # Update goal details
+        new_target = input("Enter new target net worth: ")
+        new_date = input("Enter new target date (YYYY-MM-DD): ")
+
+        cursor.execute("""
+            UPDATE goals
+            SET net_worth_target = ?, target_date = ?
+            WHERE goal_id = ?
+        """, (float(new_target), new_date, goal_id))
+        connection.commit()
+        print("Financial goal updated successfully!")
+    except sqlite3.Error as e:
+        print("Error updating financial goal:", e)
+    finally:
+        connection.close()
+
+
+
+def delete_financial_goal():
+    """
+    Delete a financial goal entry by its ID.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing goals
+        cursor.execute("SELECT goal_id, net_worth_target, target_date FROM goals")
+        goals = cursor.fetchall()
+        print("\n===== Financial Goals =====")
+        for goal_id, net_worth_target, target_date in goals:
+            print(f"ID: {goal_id}, Target Net Worth: ${net_worth_target:.2f}, Target Date: {target_date}")
+
+        # Select goal to delete
+        goal_id = input("\nEnter the ID of the goal to delete (or type 'cancel' to go back): ")
+        if goal_id.lower() == 'cancel':
+            return
+
+        cursor.execute("DELETE FROM goals WHERE goal_id = ?", (goal_id,))
+        connection.commit()
+        print("Financial goal deleted successfully!")
+    except sqlite3.Error as e:
+        print("Error deleting financial goal:", e)
+    finally:
+        connection.close()

@@ -6,7 +6,7 @@ from functions.expense_functions import add_expense  # Import function to log an
 from functions.dashboard_functions import display_dashboard  # Import function to view the dashboard.
 from functions.backup_functions import backup_database, restore_database  # Import functions to backup and restore the database.
 from functions.report_functions import expense_breakdown, cash_flow_report, record_net_worth, net_worth_trend  # Import functions for financial reports.
-from functions.edit_delete_functions import edit_bank_account, delete_bank_account  # Import functions to edit or delete bank accounts.
+from functions.edit_delete_functions import edit_bank_account, delete_bank_account,edit_stock, delete_stock,edit_expense, delete_expense, edit_salary, delete_salary ,  edit_financial_goal, delete_financial_goal # Import functions to edit or delete bank accounts.
 
 def main_menu():
     """
@@ -31,7 +31,15 @@ def main_menu():
         print("12. View Net Worth Trend")  # Option to view net worth over time.
         print("13. Edit Bank Account")
         print("14. Delete Bank Account")
-        print("15. Exit")
+        print("16. Edit Stock")
+        print("17. Delete Stock")
+        print("18. Edit Expense")
+        print("19. Delete Expense")
+        print("20. Edit Salary")
+        print("21. Delete Salary")
+        print("22. Edit Financial Goal")
+        print("23. Delete Financial Goal")
+        print("24. Exit")
 
         # Get the user's choice.
         choice = input("Choose an option: ")
@@ -63,7 +71,24 @@ def main_menu():
             edit_bank_account()  # Call function to edit bank account details.
         elif choice == "14":
             delete_bank_account()  # Call function to delete a bank account.
-        elif choice == "15":
+            # Add these to the main menu logic:
+        elif choice == "16":
+            edit_stock()
+        elif choice == "17":
+            delete_stock()
+        elif choice == "18":
+            edit_expense()
+        elif choice == "19":
+            delete_expense()
+        elif choice == "20":
+            edit_salary()
+        elif choice == "21":
+            delete_salary()
+        elif choice == "22":
+         edit_financial_goal()
+        elif choice == "23":
+         delete_financial_goal()
+        elif choice == "24":
             print("Goodbye!")  # Exit the application.
             break
         else:
