@@ -288,7 +288,7 @@ def edit_financial_goal():
             return
 
         # Update goal details
-        new_target = input("Enter new target net worth: ")
+        new_target = input("Enter new target net worth: ").replace(",", "")
         new_date = input("Enter new target date (YYYY-MM-DD): ")
 
         cursor.execute("""
@@ -298,6 +298,8 @@ def edit_financial_goal():
         """, (float(new_target), new_date, goal_id))
         connection.commit()
         print("Financial goal updated successfully!")
+    except ValueError:
+        print("Invalid input. Please enter a valid number for the target net worth.")
     except sqlite3.Error as e:
         print("Error updating financial goal:", e)
     finally:
