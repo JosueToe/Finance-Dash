@@ -334,3 +334,80 @@ def delete_financial_goal():
         print("Error deleting financial goal:", e)
     finally:
         connection.close()
+
+
+import sqlite3
+
+def edit_crypto():
+    """
+    Edit an existing cryptocurrency entry.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing cryptocurrencies
+        cursor.execute("SELECT crypto_id, coin_name, coins, current_value FROM cryptos")
+        cryptos = cursor.fetchall()
+        print("\n===== Cryptocurrencies =====")
+        for crypto_id, coin_name, coins, current_value in cryptos:
+            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.2f}, Value: ${current_value:.2f}")
+
+        # Select crypto to edit
+        crypto_id = input("\nEnter the ID of the cryptocurrency to edit (or type 'cancel' to go back): ")
+        if crypto_id.lower() == 'cancel':
+            return
+
+        # Get new values from the user
+        new_name = input("Enter new cryptocurrency name: ").capitalize()
+        new_coins = input("Enter new number of coins: ").replace(",", "")
+        new_value = input("Enter new current value per coin: ").replace(",", "")
+
+        # Convert inputs to floats after removing commas
+        new_coins = float(new_coins)
+        new_value = float(new_value)
+
+        cursor.execute("""
+            UPDATE cryptos
+            SET coin_name = ?, coins = ?, current_value = ?
+            WHERE crypto_id = ?
+        """, (new_name, new_coins, new_value, crypto_id))
+        connection.commit()
+        print("Cryptocurrency updated successfully!")
+    except ValueError:
+        print("Invalid input. Please enter valid numeric values.")
+    except sqlite3.Error as e:
+        print("Error updating cryptocurrency:", e)
+    finally:
+        connection.close()
+
+
+
+
+def delete_crypto():
+    """
+    Delete a cryptocurrency entry by its ID.
+    """
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        # Display existing cryptocurrencies
+        cursor.execute("SELECT crypto_id, coin_name, coins, current_value FROM cryptos")
+        cryptos = cursor.fetchall()
+        print("\n===== Cryptocurrencies =====")
+        for crypto_id, coin_name, coins, current_value in cryptos:
+            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.2f}, Value: ${current_value:.2f}")
+
+        # Select crypto to delete
+        crypto_id = input("\nEnter the ID of the cryptocurrency to delete (or type 'cancel' to go back): ")
+        if crypto_id.lower() == 'cancel':
+            return
+
+        cursor.execute("DELETE FROM cryptos WHERE crypto_id = ?", (crypto_id,))
+        connection.commit()
+        print("Cryptocurrency deleted successfully!")
+    except sqlite3.Error as e:
+        print("Error deleting cryptocurrency:", e)
+    finally:
+        connection.close()

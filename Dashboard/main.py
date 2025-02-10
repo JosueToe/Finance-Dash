@@ -6,7 +6,17 @@ from functions.expense_functions import add_expense  # Import function to log an
 from functions.dashboard_functions import display_dashboard  # Import function to view the dashboard.
 from functions.backup_functions import backup_database, restore_database  # Import functions to backup and restore the database.
 from functions.report_functions import expense_breakdown, cash_flow_report, record_net_worth, net_worth_trend  # Import functions for financial reports.
-from functions.edit_delete_functions import edit_bank_account, delete_bank_account,edit_stock, delete_stock,edit_expense, delete_expense, edit_salary, delete_salary ,  edit_financial_goal, delete_financial_goal # Import functions to edit or delete bank accounts.
+from functions.edit_delete_functions import (
+    edit_bank_account, delete_bank_account,
+    edit_stock, delete_stock,
+    edit_expense, delete_expense,
+    edit_salary, delete_salary,
+    edit_financial_goal, delete_financial_goal,
+    edit_crypto, delete_crypto  
+)
+from functions.crypto_functions import add_crypto  # Keep only add_crypto if edit/delete are in another file
+
+
 
 def main_menu():
     """
@@ -39,7 +49,10 @@ def main_menu():
         print("21. Delete Salary")
         print("22. Edit Financial Goal")
         print("23. Delete Financial Goal")
-        print("24. Exit")
+        print("24. Add Cryptocurrency")
+        print("25. Edit Cryptocurrency")
+        print("26. Delete Cryptocurrency")
+        print("27. Exit")
 
         # Get the user's choice.
         choice = input("Choose an option: ")
@@ -85,10 +98,16 @@ def main_menu():
         elif choice == "21":
             delete_salary()
         elif choice == "22":
-         edit_financial_goal()
+             edit_financial_goal()
         elif choice == "23":
-         delete_financial_goal()
+            delete_financial_goal()
         elif choice == "24":
+            add_crypto()
+        elif choice == "25":
+            edit_crypto()
+        elif choice == "26":
+            delete_crypto()
+        elif choice == "27":
             print("Goodbye!")  # Exit the application.
             break
         else:
