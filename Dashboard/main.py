@@ -1,4 +1,4 @@
-from functions.user_functions import add_bank_account  # Import function to add a bank account.
+from functions.bank_functions import add_bank_account  # Import function to add a bank account.
 from functions.stock_functions import add_stock  # Import function to add stock data.
 from functions.salary_functions import add_salary  # Import function to add salary details.
 from functions.goal_functions import add_financial_goal  # Import function to set a financial goal.
@@ -6,17 +6,8 @@ from functions.expense_functions import add_expense  # Import function to log an
 from functions.dashboard_functions import display_dashboard  # Import function to view the dashboard.
 from functions.backup_functions import backup_database, restore_database  # Import functions to backup and restore the database.
 from functions.report_functions import expense_breakdown, cash_flow_report, record_net_worth, net_worth_trend  # Import functions for financial reports.
-from functions.edit_delete_functions import (
-    edit_bank_account, delete_bank_account,
-    edit_stock, delete_stock,
-    edit_expense, delete_expense,
-    edit_salary, delete_salary,
-    edit_financial_goal, delete_financial_goal,
-    edit_crypto, delete_crypto  
-)
+from functions.edit_delete_functions import (edit_bank_account, delete_bank_account,edit_stock, delete_stock,edit_expense, delete_expense,edit_salary, delete_salary,edit_financial_goal, delete_financial_goal,edit_crypto, delete_crypto )
 from functions.crypto_functions import add_crypto  # Keep only add_crypto if edit/delete are in another file
-
-
 
 def main_menu():
     """
