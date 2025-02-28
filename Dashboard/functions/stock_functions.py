@@ -1,44 +1,94 @@
 import sqlite3  # Import SQLite library
+import yfinance as yf
 from functions.validate_functions import (
     get_valid_id, get_valid_float, get_valid_int, 
     get_valid_text, get_valid_frequency, get_valid_date
 )
 
+def get_valid_stock_ticker():
+    """
+    Ensures the user enters a valid stock ticker that exists in Yahoo Finance.
+    Prevents invalid tickers from being entered.
+    """
+    while True:
+        stock_ticker = input("Enter stock ticker (e.g., AAPL, TSLA): ").strip().upper()
+
+        if stock_ticker.lower() == 'cancel':
+            return None  # Allow canceling
+
+        try:
+            stock = yf.Ticker(stock_ticker)
+            stock_info = stock.history(period="1d")  # Fetch stock history
+            
+            if not stock_info.empty:
+                return stock_ticker  # Ticker is valid
+            else:
+                print("❌ Invalid stock ticker. Please enter a valid ticker symbol.")
+
+        except Exception:
+            print("❌ Invalid stock ticker. Please enter a valid ticker symbol.")
+
+def get_stock_price(ticker):
+    """
+    Fetches the latest stock price using Yahoo Finance.
+    Returns the price if successful, otherwise asks for user retry.
+    """
+    while True:
+        try:
+            stock = yf.Ticker(ticker)
+            price_data = stock.history(period="1d")["Close"]
+
+            if not price_data.empty:
+                return price_data.iloc[-1]  # Return latest closing price
+            else:
+                print("❌ Could not retrieve stock price. Please try again.")
+                retry = input("Would you like to retry? (yes/no): ").strip().lower()
+                if retry != "yes":
+                    return None  # Allow user to cancel
+            
+        except Exception:
+            print("❌ Error fetching stock price. Please enter a valid stock ticker.")
+            return None
+
 def add_stock():
     """
-    Add a new stock entry with validated input.
+    Add a new stock entry with live price validation.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        # Get valid stock name
-        stock_name = get_valid_text("Enter stock name: ")
-        if stock_name is None:
-            return  # User chose to cancel
+        # Get valid stock ticker
+        while True:
+            stock_ticker = get_valid_stock_ticker()
+            if stock_ticker is None:
+                return  # User chose to cancel
+            
+            # Get stock price
+            stock_price = get_stock_price(stock_ticker)
+            if stock_price is not None:
+                break  # Exit loop if price is valid
+            else:
+                print("❌ Unable to fetch stock price. Please enter a different stock.")
 
         # Get valid number of shares
         shares = get_valid_float("Enter number of shares: ")
         if shares is None:
             return
 
-        # Get valid current value per share
-        current_value = get_valid_float("Enter current value per share: ")
-        if current_value is None:
-            return
-
         # Insert into database
         cursor.execute("""
-            INSERT INTO stocks (stock_name, shares, current_value)
-            VALUES (?, ?, ?)
-        """, (stock_name, shares, current_value))
+            INSERT INTO stocks (stock_name, stock_ticker, shares, current_value)
+            VALUES (?, ?, ?, ?)
+        """, (stock_ticker, stock_ticker, shares, stock_price))
         connection.commit()
-        print(f"Added {shares} shares of {stock_name} at ${current_value:.2f} per share.")
+        print(f"✅ Added {shares} shares of {stock_ticker} at ${stock_price:.2f} per share.")
 
     except sqlite3.Error as e:
-        print("Error adding stock:", e)
+        print("❌ Error adding stock:", e)
     finally:
         connection.close()
+
 
 def edit_stock():
     connection = sqlite3.connect('database/finance_dashboard.db')

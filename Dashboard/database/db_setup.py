@@ -14,7 +14,7 @@ try:
     )
     """)
 
-    # Create stocks table
+    # Create stocks table (initial structure)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS stocks (
         stock_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -73,9 +73,19 @@ try:
     )
     """)
 
-    print("All tables created successfully.")
+    # 🛠️ Check if the 'stock_ticker' column exists in the stocks table
+    cursor.execute("PRAGMA table_info(stocks);")
+    columns = [row[1] for row in cursor.fetchall()]
+    
+    if "stock_ticker" not in columns:
+        print("🔧 Adding missing column: stock_ticker to stocks table...")
+        cursor.execute("ALTER TABLE stocks ADD COLUMN stock_ticker TEXT;")
+        connection.commit()
+        print("✅ Column 'stock_ticker' added successfully.")
+
+    print("✅ All tables created/updated successfully.")
 except sqlite3.Error as e:
-    print("Error creating tables:", e)
+    print("❌ Error creating/updating tables:", e)
 finally:
     connection.commit()
     connection.close()

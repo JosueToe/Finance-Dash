@@ -6,6 +6,9 @@ from functions.goal_functions import add_financial_goal, edit_financial_goal, de
 from functions.expense_functions import add_expense, edit_expense, delete_expense  
 from functions.crypto_functions import add_crypto, edit_crypto, delete_crypto  
 
+#Import Updates to Database for Live Stock and Crypto
+from functions.update_functions import update_prices, auto_update_prices
+
 # Import dashboard and reporting functions
 from functions.dashboard_functions import display_dashboard  
 from functions.report_functions import expense_breakdown, cash_flow_report, record_net_worth, net_worth_trend  
@@ -48,7 +51,8 @@ def main_menu():
         print("24. Add Cryptocurrency")
         print("25. Edit Cryptocurrency")
         print("26. Delete Cryptocurrency")
-        print("27. Exit")
+        print("27. Update Live Stock & Crypto Data")
+        print("28. Exit")
 
         # Get the user's choice.
         choice = input("Choose an option: ")
@@ -104,6 +108,10 @@ def main_menu():
         elif choice == "26":
             delete_crypto()
         elif choice == "27":
+            print("\n🔄 Updating all stock & crypto prices...")
+            update_prices()
+            print("✅ Prices updated successfully!")
+        elif choice == "28":
             print("Goodbye!")  # Exit the application.
             break
         else:

@@ -1,38 +1,56 @@
 import sqlite3
+import requests
 from functions.validate_functions import (
     get_valid_id, get_valid_float, get_valid_int, 
     get_valid_text, get_valid_frequency, get_valid_date
 )
 
+def get_crypto_price(crypto_name):
+    """
+    Fetches the live crypto price using CoinGecko API.
+    Returns the price if successful, otherwise None.
+    """
+    url = f"https://api.coingecko.com/api/v3/simple/price?ids={crypto_name.lower()}&vs_currencies=usd"
+    response = requests.get(url).json()
+    return response.get(crypto_name.lower(), {}).get("usd")
 
 def add_crypto():
     """
-    Add a new cryptocurrency entry.
+    Add a new cryptocurrency entry with live price validation.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        coin_name = input("Enter the cryptocurrency name (e.g., Bitcoin): ").capitalize()
-        coins = input("Enter the number of coins you own: ").replace(",", "")
-        current_value = input("Enter the current value per coin: ").replace(",", "")
+        # Get valid cryptocurrency name
+        while True:
+            crypto_name = get_valid_text("Enter cryptocurrency name (e.g., bitcoin, ethereum): ").lower()
+            if crypto_name is None:
+                return  # User chose to cancel
+            
+            crypto_price = get_crypto_price(crypto_name)
+            if crypto_price is not None:
+                break
+            print("Invalid cryptocurrency name. Please enter a valid name.")
 
-        # Convert inputs to floats after removing commas
-        coins = float(coins)
-        current_value = float(current_value)
+        # Get valid number of coins
+        coins = get_valid_float("Enter number of coins: ")
+        if coins is None:
+            return
 
+        # Insert into database
         cursor.execute("""
             INSERT INTO cryptos (coin_name, coins, current_value)
             VALUES (?, ?, ?)
-        """, (coin_name, coins, current_value))
+        """, (crypto_name.capitalize(), coins, crypto_price))
         connection.commit()
-        print(f"{coin_name} added successfully!")
-    except ValueError:
-        print("Invalid input. Please enter valid numeric values.")
+        print(f"Added {coins} of {crypto_name.capitalize()} at ${crypto_price:.2f} per coin.")
+
     except sqlite3.Error as e:
         print("Error adding cryptocurrency:", e)
     finally:
         connection.close()
+
 
 def edit_crypto():
     """
