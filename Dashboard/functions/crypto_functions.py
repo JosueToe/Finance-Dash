@@ -16,86 +16,91 @@ def get_crypto_price(crypto_name):
 
 def add_crypto():
     """
-    Add a new cryptocurrency entry with live price validation.
+    Add a new cryptocurrency entry with validation and a cancel option.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        # Get valid cryptocurrency name
-        while True:
-            crypto_name = get_valid_text("Enter cryptocurrency name (e.g., bitcoin, ethereum): ").lower()
-            if crypto_name is None:
-                return  # User chose to cancel
-            
-            crypto_price = get_crypto_price(crypto_name)
-            if crypto_price is not None:
-                break
-            print("Invalid cryptocurrency name. Please enter a valid name.")
+        # Ask for cryptocurrency name
+        coin_name = get_valid_text("Enter the cryptocurrency name (or type 'cancel' to exit): ")
+        if coin_name is None:
+            print("Returning to main menu...")
+            return
 
-        # Get valid number of coins
-        coins = get_valid_float("Enter number of coins: ")
+        # Fetch live crypto price
+        current_value = get_crypto_price(coin_name)
+        if current_value is None:
+            print("❌ Error: Invalid cryptocurrency. Please try again.")
+            return
+
+        # Ask for the number of coins
+        coins = get_valid_float("Enter the number of coins you own (or type 'cancel' to exit): ")
         if coins is None:
+            print("Returning to main menu...")
             return
 
         # Insert into database
         cursor.execute("""
             INSERT INTO cryptos (coin_name, coins, current_value)
             VALUES (?, ?, ?)
-        """, (crypto_name.capitalize(), coins, crypto_price))
+        """, (coin_name, coins, current_value))
         connection.commit()
-        print(f"Added {coins} of {crypto_name.capitalize()} at ${crypto_price:.2f} per coin.")
+        print(f"✅ {coin_name} added successfully with {coins} coins at ${current_value:.2f} per coin.")
 
     except sqlite3.Error as e:
-        print("Error adding cryptocurrency:", e)
+        print("❌ Error adding cryptocurrency:", e)
     finally:
         connection.close()
 
 
+
 def edit_crypto():
     """
-    Edit an existing cryptocurrency entry with validation.
+    Edit an existing cryptocurrency entry with live price validation.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        cursor.execute("SELECT crypto_id, coin_name, coins, current_value FROM cryptos")
+        # Display existing cryptocurrencies
+        cursor.execute("SELECT crypto_id, coin_name, coins FROM cryptos")
         cryptos = cursor.fetchall()
-        if not cryptos:
-            print("\nNo cryptocurrencies found. Add one before editing.")
-            return
-
         print("\n===== Cryptocurrencies =====")
-        for crypto_id, coin_name, coins, current_value in cryptos:
-            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.4f}, Value: ${current_value:.2f}")
+        for crypto_id, coin_name, coins in cryptos:
+            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.2f}")
 
-        # Get valid crypto ID
+        # Select crypto to edit
         crypto_id = get_valid_id("\nEnter the ID of the cryptocurrency to edit (or type 'cancel' to go back): ", "cryptos", "crypto_id")
         if crypto_id is None:
+            return  # User canceled
+
+        # Retrieve existing crypto name
+        cursor.execute("SELECT coin_name FROM cryptos WHERE crypto_id = ?", (crypto_id,))
+        coin_name = cursor.fetchone()[0]
+
+        # Get latest price
+        new_value = get_crypto_price(coin_name)
+        if new_value is None:
+            print("❌ Error fetching live price. Please try again later.")
             return
 
-        # Get new values
-        new_name = get_valid_text("Enter new cryptocurrency name: ")
-        if new_name is None:
-            return
-
+        # Get valid number of coins
         new_coins = get_valid_float("Enter new number of coins: ")
         if new_coins is None:
             return
 
-        new_value = get_valid_float("Enter new current value per coin: ")
-        if new_value is None:
-            return
-
+        # Update crypto details
         cursor.execute("""
-            UPDATE cryptos SET coin_name = ?, coins = ?, current_value = ? WHERE crypto_id = ?
-        """, (new_name, new_coins, new_value, crypto_id))
+            UPDATE cryptos
+            SET coins = ?, current_value = ?
+            WHERE crypto_id = ?
+        """, (new_coins, new_value, crypto_id))
         connection.commit()
-        print("Cryptocurrency updated successfully!")
+        print(f"✅ Updated {coin_name}: {new_coins} coins at ${new_value:.2f} per coin.")
 
     except sqlite3.Error as e:
-        print("Error updating cryptocurrency:", e)
+        print("❌ Error updating cryptocurrency:", e)
     finally:
         connection.close()
 

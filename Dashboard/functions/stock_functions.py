@@ -62,6 +62,7 @@ def add_stock():
         while True:
             stock_ticker = get_valid_stock_ticker()
             if stock_ticker is None:
+                print("❌ Stock addition canceled.")
                 return  # User chose to cancel
             
             # Get stock price
@@ -74,6 +75,7 @@ def add_stock():
         # Get valid number of shares
         shares = get_valid_float("Enter number of shares: ")
         if shares is None:
+            print("❌ Stock addition canceled.")
             return
 
         # Insert into database
@@ -91,40 +93,51 @@ def add_stock():
 
 
 def edit_stock():
+    """
+    Edit an existing stock entry with live price validation.
+    """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        cursor.execute("SELECT stock_id, stock_name, shares, current_value FROM stocks")
+        # Display existing stocks
+        cursor.execute("SELECT stock_id, stock_ticker, shares FROM stocks")
         stocks = cursor.fetchall()
         print("\n===== Stocks =====")
-        for stock_id, stock_name, shares, current_value in stocks:
-            print(f"ID: {stock_id}, Name: {stock_name}, Shares: {shares:.2f}, Value: ${current_value:.2f}")
+        for stock_id, stock_ticker, shares in stocks:
+            print(f"ID: {stock_id}, Ticker: {stock_ticker}, Shares: {shares:.2f}")
 
+        # Select stock to edit
         stock_id = get_valid_id("\nEnter the ID of the stock to edit (or type 'cancel' to go back): ", "stocks", "stock_id")
         if stock_id is None:
+            return  # User canceled
+
+        # Retrieve existing ticker
+        cursor.execute("SELECT stock_ticker FROM stocks WHERE stock_id = ?", (stock_id,))
+        stock_ticker = cursor.fetchone()[0]
+
+        # Get latest price
+        new_value = get_stock_price(stock_ticker)
+        if new_value is None:
+            print("❌ Error fetching live price. Please try again later.")
             return
 
-        new_name = get_valid_text("Enter new stock name: ")
-        if new_name is None:
-            return
-
+        # Get valid number of shares
         new_shares = get_valid_float("Enter new number of shares: ")
         if new_shares is None:
             return
 
-        new_value = get_valid_float("Enter new current value per share: ")
-        if new_value is None:
-            return
-
+        # Update stock details
         cursor.execute("""
-            UPDATE stocks SET stock_name = ?, shares = ?, current_value = ? WHERE stock_id = ?
-        """, (new_name, new_shares, new_value, stock_id))
+            UPDATE stocks
+            SET shares = ?, current_value = ?
+            WHERE stock_id = ?
+        """, (new_shares, new_value, stock_id))
         connection.commit()
-        print("Stock updated successfully!")
+        print(f"✅ Updated {stock_ticker}: {new_shares} shares at ${new_value:.2f} per share.")
 
     except sqlite3.Error as e:
-        print("Error updating stock:", e)
+        print("❌ Error updating stock:", e)
     finally:
         connection.close()
 

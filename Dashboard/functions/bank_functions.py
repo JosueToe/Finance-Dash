@@ -6,24 +6,29 @@ from functions.validate_functions import (
 
 def add_bank_account():
     """
-    Add a new bank account entry with validated input.
+    Add a new bank account with a cancel option.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        # Get valid account type
-        while True:
-            account_type = get_valid_text("Enter account type (savings/checking): ").lower()
-            if account_type is None:
-                return  # User chose to cancel
-            if account_type in ["savings", "checking"]:
-                break
-            print("Invalid account type. Please enter 'savings' or 'checking'.")
+        # Get account type
+        account_type = input("Enter account type (savings/checking) or type 'cancel' to exit: ").lower()
+        if account_type == 'cancel':
+            print("Returning to main menu...")
+            return
 
-        # Get valid account balance
-        balance = get_valid_float("Enter account balance: ")
+        while account_type not in ['savings', 'checking']:
+            print("❌ Invalid input. Please enter 'savings' or 'checking'.")
+            account_type = input("Enter account type (savings/checking): ").lower()
+            if account_type == 'cancel':
+                print("Returning to main menu...")
+                return
+
+        # Get balance
+        balance = get_valid_float("Enter account balance (or type 'cancel' to exit): ")
         if balance is None:
+            print("Returning to main menu...")
             return
 
         # Insert into database
@@ -32,12 +37,13 @@ def add_bank_account():
             VALUES (?, ?)
         """, (account_type, balance))
         connection.commit()
-        print(f"{account_type.capitalize()} account added successfully with balance ${balance:.2f}.")
+        print(f"✅ {account_type.capitalize()} account added successfully with balance ${balance:.2f}.")
 
     except sqlite3.Error as e:
-        print("Error adding bank account:", e)
+        print("❌ Error adding bank account:", e)
     finally:
         connection.close()
+
 
 def edit_bank_account():
     connection = sqlite3.connect('database/finance_dashboard.db')
