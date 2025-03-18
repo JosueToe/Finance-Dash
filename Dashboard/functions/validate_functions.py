@@ -7,7 +7,7 @@ def get_valid_id(prompt, table_name, id_column):
     """
     Repeatedly asks the user for a valid ID from a given table.
     Ensures the ID exists before proceeding.
-    Allows 'cancel' option to exit.
+    Allows 'cancel' to exit and 'back' to return to the previous menu.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
@@ -15,12 +15,16 @@ def get_valid_id(prompt, table_name, id_column):
     while True:
         user_input = input(prompt).strip().lower()
 
-        if user_input == 'cancel':
+        if user_input == 'cancel':  # Allows the user to exit completely
             connection.close()
-            return None  # Allows the user to exit
+            return None
 
-        if not user_input.isdigit():  # Ensures it's a whole number
-            print("Invalid input. Please enter a valid numeric ID (whole number).")
+        if user_input == 'back':  # Allows the user to go back
+            connection.close()
+            return "back"
+
+        if not user_input.isdigit():  # Ensures input is a whole number
+            print("❌ Invalid input. Please enter a valid numeric ID or type 'back' to return.")
             continue  # Ask again
 
         cursor.execute(f"SELECT {id_column} FROM {table_name} WHERE {id_column} = ?", (user_input,))
@@ -30,7 +34,7 @@ def get_valid_id(prompt, table_name, id_column):
             connection.close()
             return int(user_input)  # Valid ID found, return it
         else:
-            print(f"Invalid ID. Please enter an existing ID from the {table_name} list.")
+            print(f"❌ Invalid ID. Please enter an existing ID from the {table_name} list or type 'back' to return.")
 
 # ---- Validate Float Inputs (Allows Decimals) ----
 def get_valid_float(prompt):

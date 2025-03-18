@@ -16,23 +16,26 @@ def get_crypto_price(crypto_name):
 
 def add_crypto():
     """
-    Add a new cryptocurrency entry with validation and a cancel option.
+    Add a new cryptocurrency entry with validation and a re-prompt for invalid entries.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        # Ask for cryptocurrency name
-        coin_name = get_valid_text("Enter the cryptocurrency name (or type 'cancel' to exit): ")
-        if coin_name is None:
-            print("Returning to main menu...")
-            return
+        # Ask for cryptocurrency name (continuously until a valid one is entered)
+        while True:
+            coin_name = get_valid_text("Enter the cryptocurrency name (or type 'cancel' to exit): ")
+            if coin_name is None:
+                print("Returning to main menu...")
+                return
 
-        # Fetch live crypto price
-        current_value = get_crypto_price(coin_name)
-        if current_value is None:
-            print("❌ Error: Invalid cryptocurrency. Please try again.")
-            return
+            # Fetch live crypto price
+            current_value = get_crypto_price(coin_name)
+            if current_value is None:
+                print("❌ Error: Invalid cryptocurrency. Please try again.")
+                continue  # Re-ask the user for input
+            else:
+                break  # Exit the loop if a valid crypto name is entered
 
         # Ask for the number of coins
         coins = get_valid_float("Enter the number of coins you own (or type 'cancel' to exit): ")
@@ -46,14 +49,12 @@ def add_crypto():
             VALUES (?, ?, ?)
         """, (coin_name, coins, current_value))
         connection.commit()
-        print(f"✅ {coin_name} added successfully with {coins} coins at ${current_value:.2f} per coin.")
+        print(f"✅ {coin_name} added successfully with {coins} coins at ${current_value:,.2f} per coin.")
 
     except sqlite3.Error as e:
         print("❌ Error adding cryptocurrency:", e)
     finally:
         connection.close()
-
-
 
 def edit_crypto():
     """
