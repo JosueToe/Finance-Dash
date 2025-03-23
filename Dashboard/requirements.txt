@@ -1,0 +1,7 @@
+# These are the packages or dependencies that must be installed on the computer before running the code. 
+yfinance
+requests
+pandas
+
+# pip install -r requirements.txt
+# type this in terminal to download dependencies

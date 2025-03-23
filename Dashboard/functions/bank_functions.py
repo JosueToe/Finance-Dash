@@ -75,32 +75,30 @@ def edit_bank_account():
                 print("❌ Invalid ID. Please select a valid account ID.")
                 continue  # Re-ask for input
 
-            # Account selection is confirmed, move to editing
             while True:
-                new_type = input("Enter new account type (savings/checking) or 'back' to reselect account: ").strip().lower()
+                new_type = input("Enter new account type (savings/checking) or 'back' to reselect ID: ").strip().lower()
                 if new_type == "back":
                     break  # Go back to reselecting account ID
                 elif new_type not in ["savings", "checking"]:
                     print("❌ Invalid input. Please enter 'savings' or 'checking'.")
                     continue
 
-                new_balance = input("Enter new account balance or 'back' to reselect account: ").strip().lower()
-                if new_balance == "back":
-                    break  # Go back to reselecting account ID
+                while True:
+                    new_balance = input("Enter new account balance or 'back' to reselect account type: ").strip().lower()
+                    if new_balance == "back":
+                        break  # Go back to account type selection
 
-                try:
-                    new_balance = float(new_balance)
-                except ValueError:
-                    print("❌ Invalid input. Please enter a valid number.")
-                    continue
-
-                # Update in database
-                cursor.execute("""
-                    UPDATE bank_accounts SET account_type = ?, balance = ? WHERE account_id = ?
-                """, (new_type, new_balance, account_id))
-                connection.commit()
-                print("✅ Bank account updated successfully!")
-                return  # Exit function after successful update
+                    try:
+                        new_balance = float(new_balance)
+                        cursor.execute("""
+                            UPDATE bank_accounts SET account_type = ?, balance = ? WHERE account_id = ?
+                        """, (new_type, new_balance, account_id))
+                        connection.commit()
+                        print("✅ Bank account updated successfully!")
+                        return  # Exit function after successful update
+                    except ValueError:
+                        print("❌ Invalid input. Please enter a valid number.")
+                        continue  # Stay in balance input step
 
     except sqlite3.Error as e:
         print("❌ Error updating bank account:", e)
@@ -108,52 +106,63 @@ def edit_bank_account():
         connection.close()
 
 
+
+import sqlite3
+from functions.validate_functions import get_valid_id
+
 def delete_bank_account():
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        while True:  # Allow reselecting ID if user enters "back"
+        while True:
+            # Show available accounts
             cursor.execute("SELECT account_id, account_type, balance FROM bank_accounts")
             accounts = cursor.fetchall()
             print("\n===== Bank Accounts =====")
             for account_id, account_type, balance in accounts:
                 print(f"ID: {account_id}, Type: {account_type}, Balance: ${balance:.2f}")
 
-            account_id = input("\nEnter the ID of the account to delete (or type 'back' to return, 'cancel' to exit): ").strip().lower()
-            if account_id == "cancel":
+            # Ask for ID to delete
+            account_id = input("\nEnter the ID of the account to delete (or type 'back' to return, 'cancel' to exit): ").lower().strip()
+
+            if account_id == 'cancel':
                 print("Returning to main menu...")
                 return
-            elif account_id == "back":
-                continue  # Reload account list to allow re-selection
-
-            if not account_id.isdigit():
+            elif account_id == 'back':
+                continue
+            elif not account_id.isdigit():
                 print("❌ Invalid input. Please enter a valid numeric ID.")
                 continue
 
-            account_id = int(account_id)
-
+            # Check if account exists
             cursor.execute("SELECT * FROM bank_accounts WHERE account_id = ?", (account_id,))
-            if not cursor.fetchone():
-                print("❌ Invalid ID. Please select a valid account ID.")
-                continue  # Re-ask for input
+            result = cursor.fetchone()
 
-            while True:
-                confirm = input(f"Are you sure you want to delete account ID {account_id}? (yes/no/back): ").strip().lower()
-                if confirm == "back":
-                    break  # Go back to reselecting account ID
-                elif confirm == "yes":
-                    cursor.execute("DELETE FROM bank_accounts WHERE account_id = ?", (account_id,))
-                    connection.commit()
-                    print("✅ Bank account deleted successfully!")
-                    return  # Exit function after successful deletion
-                elif confirm == "no":
-                    print("❌ Deletion cancelled.")
-                    break  # Return to account selection menu
-                else:
-                    print("❌ Invalid choice. Please type 'yes', 'no', or 'back'.")
+            if not result:
+                print("❌ No account found with that ID.")
+                continue
+
+            # Confirm deletion
+            confirm = input(f"Are you sure you want to delete account ID {account_id}? (yes/no/back): ").strip().lower()
+            if confirm == 'cancel':
+                print("Returning to main menu...")
+                return
+            elif confirm == 'back':
+                continue
+            elif confirm != 'yes':
+                print("❌ Deletion cancelled.")
+                continue
+
+            # Delete and confirm
+            cursor.execute("DELETE FROM bank_accounts WHERE account_id = ?", (account_id,))
+            connection.commit()
+            print(f"✅ Account ID {account_id} deleted successfully.")
+            break
 
     except sqlite3.Error as e:
         print("❌ Error deleting bank account:", e)
+
     finally:
         connection.close()
+
