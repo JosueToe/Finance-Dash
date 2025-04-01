@@ -4,45 +4,64 @@ from functions.validate_functions import (
     get_valid_text, get_valid_frequency, get_valid_date
 )
 
+import sqlite3
+
 def add_bank_account():
     """
-    Add a new bank account with a cancel option.
+    Add a new bank account with full back navigation support.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
+    steps = ['account_type', 'balance']
+    data = {}
+
     try:
-        # Get account type
-        account_type = input("Enter account type (savings/checking) or type 'cancel' to exit: ").lower()
-        if account_type == 'cancel':
-            print("Returning to main menu...")
-            return
+        step_index = 0
+        while step_index < len(steps):
+            step = steps[step_index]
 
-        while account_type not in ['savings', 'checking']:
-            print("❌ Invalid input. Please enter 'savings' or 'checking'.")
-            account_type = input("Enter account type (savings/checking): ").lower()
-            if account_type == 'cancel':
-                print("Returning to main menu...")
-                return
+            if step == 'account_type':
+                user_input = input("Enter account type (savings/checking) or type 'back' or 'cancel': ").lower()
+                if user_input == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if user_input == 'back':
+                    print("🔙 Going back... (nothing to go back to)")
+                    continue
+                if user_input in ['savings', 'checking']:
+                    data['account_type'] = user_input
+                    step_index += 1
+                else:
+                    print("❌ Invalid input. Please enter 'savings' or 'checking'.")
 
-        # Get balance
-        balance = get_valid_float("Enter account balance (or type 'cancel' to exit): ")
-        if balance is None:
-            print("Returning to main menu...")
-            return
+            elif step == 'balance':
+                user_input = input("Enter account balance or type 'back' or 'cancel': ").replace(",", "").strip()
+                if user_input.lower() == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if user_input.lower() == 'back':
+                    step_index -= 1
+                    continue
+                try:
+                    data['balance'] = float(user_input)
+                    step_index += 1
+                except ValueError:
+                    print("❌ Invalid input. Please enter a valid number.")
 
-        # Insert into database
+        # Insert into DB
         cursor.execute("""
             INSERT INTO bank_accounts (account_type, balance)
             VALUES (?, ?)
-        """, (account_type, balance))
+        """, (data['account_type'], data['balance']))
         connection.commit()
-        print(f"✅ {account_type.capitalize()} account added successfully with balance ${balance:.2f}.")
+        print(f"✅ {data['account_type'].capitalize()} account added successfully with balance ${data['balance']:.2f}.")
 
     except sqlite3.Error as e:
         print("❌ Error adding bank account:", e)
     finally:
         connection.close()
+
 
 
 def edit_bank_account():

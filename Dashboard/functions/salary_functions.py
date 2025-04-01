@@ -4,36 +4,79 @@ from functions.validate_functions import (
     get_valid_text, get_valid_frequency, get_valid_date
 )
 
+from datetime import datetime
+import sqlite3
+
 def add_salary():
     """
-    Add a new salary entry with validated input.
+    Add salary with back navigation across amount, frequency, and date.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
+    steps = ['amount', 'frequency', 'date']
+    data = {}
+    step_index = 0
+
     try:
-        # Get valid biweekly salary amount
-        amount = get_valid_float("Enter biweekly salary amount: ")
-        if amount is None:
-            return  # User chose to cancel
+        while step_index < len(steps):
+            step = steps[step_index]
 
-        # Get valid next payment date
-        next_payment_date = get_valid_date("Enter next payment date (MM/DD/YYYY): ")
-        if next_payment_date is None:
-            return
+            if step == 'amount':
+                user_input = input("Enter biweekly salary amount (or type 'back' or 'cancel'): ").replace(",", "").strip()
+                if user_input.lower() == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if user_input.lower() == 'back':
+                    print("🔙 Nothing to go back to.")
+                    continue
+                try:
+                    data['amount'] = float(user_input)
+                    step_index += 1
+                except ValueError:
+                    print("❌ Invalid input. Please enter a valid number.")
 
-        # Insert into database
+            elif step == 'frequency':
+                user_input = input("Enter salary frequency (biweekly/monthly) or 'back'/'cancel': ").lower()
+                if user_input == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if user_input == 'back':
+                    step_index -= 1
+                    continue
+                if user_input in ['biweekly', 'monthly']:
+                    data['frequency'] = user_input
+                    step_index += 1
+                else:
+                    print("❌ Invalid frequency. Use 'biweekly' or 'monthly'.")
+
+            elif step == 'date':
+                user_input = input("Enter next payment date (MM/DD/YYYY) or 'back'/'cancel': ")
+                if user_input.lower() == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if user_input.lower() == 'back':
+                    step_index -= 1
+                    continue
+                try:
+                    parsed_date = datetime.strptime(user_input, "%m/%d/%Y").strftime("%Y-%m-%d")
+                    data['next_payment_date'] = parsed_date
+                    step_index += 1
+                except ValueError:
+                    print("❌ Invalid date format. Use MM/DD/YYYY.")
+
         cursor.execute("""
             INSERT INTO salary (amount, frequency, next_payment_date)
             VALUES (?, ?, ?)
-        """, (amount, 'biweekly', next_payment_date))
+        """, (data['amount'], data['frequency'], data['next_payment_date']))
         connection.commit()
-        print(f"Biweekly salary of ${amount:.2f} added. Next payment date: {next_payment_date}.")
+        print(f"✅ Salary added: ${data['amount']:.2f} ({data['frequency']}, next on {data['next_payment_date']}).")
 
     except sqlite3.Error as e:
-        print("Error adding salary:", e)
+        print("❌ Error adding salary:", e)
     finally:
         connection.close()
+
     
 
 def edit_salary():

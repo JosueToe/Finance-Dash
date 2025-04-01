@@ -1,139 +1,200 @@
 import sqlite3
 import requests
+import yfinance as yf
 from functions.validate_functions import (
     get_valid_id, get_valid_float, get_valid_int, 
     get_valid_text, get_valid_frequency, get_valid_date
 )
 
 def get_crypto_price(crypto_name):
-    """
-    Fetches the live crypto price using CoinGecko API.
-    Returns the price if successful, otherwise None.
-    """
-    url = f"https://api.coingecko.com/api/v3/simple/price?ids={crypto_name.lower()}&vs_currencies=usd"
-    response = requests.get(url).json()
-    return response.get(crypto_name.lower(), {}).get("usd")
+    try:
+        url = f"https://api.coingecko.com/api/v3/simple/price?ids={crypto_name.lower()}&vs_currencies=usd"
+        response = requests.get(url).json()
+        return response.get(crypto_name.lower(), {}).get("usd")
+    except Exception:
+        return None
+
 
 def add_crypto():
-    """
-    Add a new cryptocurrency entry with validation and a re-prompt for invalid entries.
-    """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
+    steps = ['name', 'coins']
+    data = {}
+    step_index = 0
 
     try:
-        # Ask for cryptocurrency name (continuously until a valid one is entered)
-        while True:
-            coin_name = get_valid_text("Enter the cryptocurrency name (or type 'cancel' to exit): ")
-            if coin_name is None:
-                print("Returning to main menu...")
-                return
+        while step_index < len(steps):
+            step = steps[step_index]
 
-            # Fetch live crypto price
-            current_value = get_crypto_price(coin_name)
-            if current_value is None:
-                print("❌ Error: Invalid cryptocurrency. Please try again.")
-                continue  # Re-ask the user for input
-            else:
-                break  # Exit the loop if a valid crypto name is entered
+            if step == 'name':
+                name_input = input("Enter the cryptocurrency name (e.g., bitcoin) or 'back'/'cancel': ").strip().lower()
+                if name_input == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if name_input == 'back':
+                    print("🔙 Nothing to go back to.")
+                    continue
 
-        # Ask for the number of coins
-        coins = get_valid_float("Enter the number of coins you own (or type 'cancel' to exit): ")
-        if coins is None:
-            print("Returning to main menu...")
-            return
+                price = get_crypto_price(name_input)
+                if price is None:
+                    print("❌ Error: Invalid cryptocurrency. Please try again.")
+                else:
+                    data['name'] = name_input
+                    data['price'] = price
+                    step_index += 1
 
-        # Insert into database
+            elif step == 'coins':
+                coins_input = input("Enter the number of coins (or 'back'/'cancel'): ").replace(",", "").strip()
+                if coins_input.lower() == 'cancel':
+                    print("❌ Operation cancelled.")
+                    return
+                if coins_input.lower() == 'back':
+                    step_index -= 1
+                    continue
+                try:
+                    data['coins'] = float(coins_input)
+                    step_index += 1
+                except ValueError:
+                    print("❌ Invalid input. Please enter a numeric value.")
+
         cursor.execute("""
             INSERT INTO cryptos (coin_name, coins, current_value)
             VALUES (?, ?, ?)
-        """, (coin_name, coins, current_value))
+        """, (data['name'], data['coins'], data['price']))
         connection.commit()
-        print(f"✅ {coin_name} added successfully with {coins} coins at ${current_value:,.2f} per coin.")
+        print(f"✅ {data['name'].capitalize()} added successfully with {data['coins']} coins at ${data['price']:.2f}.")
 
     except sqlite3.Error as e:
         print("❌ Error adding cryptocurrency:", e)
     finally:
         connection.close()
 
+
 def edit_crypto():
-    """
-    Edit an existing cryptocurrency entry with live price validation.
-    """
-    connection = sqlite3.connect('database/finance_dashboard.db')
-    cursor = connection.cursor()
-
-    try:
-        # Display existing cryptocurrencies
-        cursor.execute("SELECT crypto_id, coin_name, coins FROM cryptos")
-        cryptos = cursor.fetchall()
-        print("\n===== Cryptocurrencies =====")
-        for crypto_id, coin_name, coins in cryptos:
-            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.2f}")
-
-        # Select crypto to edit
-        crypto_id = get_valid_id("\nEnter the ID of the cryptocurrency to edit (or type 'cancel' to go back): ", "cryptos", "crypto_id")
-        if crypto_id is None:
-            return  # User canceled
-
-        # Retrieve existing crypto name
-        cursor.execute("SELECT coin_name FROM cryptos WHERE crypto_id = ?", (crypto_id,))
-        coin_name = cursor.fetchone()[0]
-
-        # Get latest price
-        new_value = get_crypto_price(coin_name)
-        if new_value is None:
-            print("❌ Error fetching live price. Please try again later.")
-            return
-
-        # Get valid number of coins
-        new_coins = get_valid_float("Enter new number of coins: ")
-        if new_coins is None:
-            return
-
-        # Update crypto details
-        cursor.execute("""
-            UPDATE cryptos
-            SET coins = ?, current_value = ?
-            WHERE crypto_id = ?
-        """, (new_coins, new_value, crypto_id))
-        connection.commit()
-        print(f"✅ Updated {coin_name}: {new_coins} coins at ${new_value:.2f} per coin.")
-
-    except sqlite3.Error as e:
-        print("❌ Error updating cryptocurrency:", e)
-    finally:
-        connection.close()
-
-
-def delete_crypto():
-    """
-    Delete a cryptocurrency entry by its ID with validation.
-    """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
         cursor.execute("SELECT crypto_id, coin_name, coins, current_value FROM cryptos")
         cryptos = cursor.fetchall()
+
         if not cryptos:
-            print("\nNo cryptocurrencies found. Add one before deleting.")
+            print("⚠️ No cryptocurrency records found.")
             return
 
         print("\n===== Cryptocurrencies =====")
         for crypto_id, coin_name, coins, current_value in cryptos:
-            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.4f}, Value: ${current_value:.2f}")
+            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.2f}, Value: ${current_value:.2f}")
 
-        # Get valid crypto ID
-        crypto_id = get_valid_id("\nEnter the ID of the cryptocurrency to delete (or type 'cancel' to go back): ", "cryptos", "crypto_id")
-        if crypto_id is None:
-            return
+        while True:
+            user_input = input("\nEnter the ID of the crypto to edit (or 'back'/'cancel'): ").strip().lower()
+            if user_input == 'cancel':
+                return
+            if user_input == 'back':
+                print("🔙 Nothing to go back to.")
+                continue
+            if user_input.isdigit():
+                crypto_id = int(user_input)
+                cursor.execute("SELECT * FROM cryptos WHERE crypto_id = ?", (crypto_id,))
+                if cursor.fetchone():
+                    break
+                else:
+                    print("❌ Invalid ID. Try again.")
+            else:
+                print("❌ Please enter a valid numeric ID.")
 
-        cursor.execute("DELETE FROM cryptos WHERE crypto_id = ?", (crypto_id,))
+        steps = ['name', 'coins']
+        data = {}
+        step_index = 0
+
+        while step_index < len(steps):
+            step = steps[step_index]
+
+            if step == 'name':
+                name_input = input("Enter new cryptocurrency name (e.g., bitcoin) or 'back'/'cancel': ").strip().lower()
+                if name_input == 'cancel':
+                    print("❌ Operation cancelled.")
+                    return
+                if name_input == 'back':
+                    print("🔙 Nothing to go back to.")
+                    continue
+
+                price = get_crypto_price(name_input)
+                if price is None:
+                    print("❌ Error: Invalid name. Try again.")
+                else:
+                    data['name'] = name_input
+                    data['price'] = price
+                    step_index += 1
+
+            elif step == 'coins':
+                coins_input = input("Enter new number of coins (or 'back'/'cancel'): ").replace(",", "").strip()
+                if coins_input.lower() == 'cancel':
+                    return
+                if coins_input.lower() == 'back':
+                    step_index -= 1
+                    continue
+                try:
+                    data['coins'] = float(coins_input)
+                    step_index += 1
+                except ValueError:
+                    print("❌ Invalid number. Please enter digits only.")
+
+        cursor.execute("""
+            UPDATE cryptos SET coin_name = ?, coins = ?, current_value = ?
+            WHERE crypto_id = ?
+        """, (data['name'], data['coins'], data['price'], crypto_id))
         connection.commit()
-        print("Cryptocurrency deleted successfully!")
+        print("✅ Cryptocurrency updated successfully!")
 
     except sqlite3.Error as e:
-        print("Error deleting cryptocurrency:", e)
+        print("❌ Error editing cryptocurrency:", e)
+    finally:
+        connection.close()
+
+
+def delete_crypto():
+    connection = sqlite3.connect('database/finance_dashboard.db')
+    cursor = connection.cursor()
+
+    try:
+        cursor.execute("SELECT crypto_id, coin_name, coins, current_value FROM cryptos")
+        cryptos = cursor.fetchall()
+
+        if not cryptos:
+            print("⚠️ No cryptocurrencies found.")
+            return
+
+        print("\n===== Cryptocurrencies =====")
+        for crypto_id, coin_name, coins, current_value in cryptos:
+            print(f"ID: {crypto_id}, Coin: {coin_name}, Coins: {coins:.2f}, Value: ${current_value:.2f}")
+
+        while True:
+            user_input = input("\nEnter the ID of the crypto to delete (or 'back'/'cancel'): ").strip().lower()
+            if user_input == 'cancel':
+                return
+            if user_input == 'back':
+                print("🔙 Nothing to go back to.")
+                continue
+            if user_input.isdigit():
+                crypto_id = int(user_input)
+                cursor.execute("SELECT * FROM cryptos WHERE crypto_id = ?", (crypto_id,))
+                if cursor.fetchone():
+                    break
+                else:
+                    print("❌ Invalid ID.")
+            else:
+                print("❌ Enter a numeric ID.")
+
+        confirm = input(f"Are you sure you want to delete crypto ID {crypto_id}? (yes/no): ").strip().lower()
+        if confirm == 'yes':
+            cursor.execute("DELETE FROM cryptos WHERE crypto_id = ?", (crypto_id,))
+            connection.commit()
+            print("✅ Cryptocurrency deleted successfully.")
+        else:
+            print("❌ Deletion cancelled.")
+
+    except sqlite3.Error as e:
+        print("❌ Error deleting cryptocurrency:", e)
     finally:
         connection.close()
