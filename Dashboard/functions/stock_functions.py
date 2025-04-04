@@ -50,117 +50,204 @@ def get_stock_price(ticker):
             print("❌ Error fetching stock price. Please enter a valid stock ticker.")
             return None
 
+def get_stock_price(ticker):
+    import yfinance as yf
+    try:
+        stock = yf.Ticker(ticker.upper())
+        data = stock.history(period="1d")
+        if not data.empty:
+            return float(data["Close"].iloc[-1])
+        return None
+    except Exception as e:
+        print(f"❌ [DEBUG] Error fetching price for {ticker}: {e}")
+        return None
+
+    
 def add_stock():
     """
-    Add a new stock entry with live price validation.
+    Add a new stock entry with full back/cancel support and ticker validation.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
+    steps = ['ticker', 'shares']
+    data = {}
+    step_index = 0
+
     try:
-        # Get valid stock ticker
-        while True:
-            stock_ticker = get_valid_stock_ticker()
-            if stock_ticker is None:
-                print("❌ Stock addition canceled.")
-                return  # User chose to cancel
-            
-            # Get stock price
-            stock_price = get_stock_price(stock_ticker)
-            if stock_price is not None:
-                break  # Exit loop if price is valid
-            else:
-                print("❌ Unable to fetch stock price. Please enter a different stock.")
+        while step_index < len(steps):
+            step = steps[step_index]
 
-        # Get valid number of shares
-        shares = get_valid_float("Enter number of shares: ")
-        if shares is None:
-            print("❌ Stock addition canceled.")
-            return
+            if step == 'ticker':
+                ticker_input = input("Enter stock ticker (e.g., AAPL, TSLA) or 'back'/'cancel': ").strip().upper()
 
-        # Insert into database
+                if ticker_input.lower() == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if ticker_input.lower() == 'back':
+                    print("🔙 Nothing to go back to.")
+                    continue
+
+                stock = yf.Ticker(ticker_input)
+                try:
+                    stock_info = stock.info
+                    current_price = stock.history(period="1d")["Close"].iloc[-1]
+
+                    if not stock_info or 'shortName' not in stock_info or current_price is None:
+                        raise ValueError
+
+                    data['stock_ticker'] = ticker_input
+                    data['stock_name'] = stock_info['shortName']
+                    data['current_value'] = float(current_price)
+                    print(f"✅ Validated {data['stock_name']} at ${data['current_value']:.2f} per share.")
+                    step_index += 1
+                except Exception:
+                    print("❌ Invalid stock ticker. Please enter a valid symbol.")
+
+            elif step == 'shares':
+                shares_input = input("Enter number of shares (decimals allowed) or 'back'/'cancel': ").replace(",", "").strip()
+
+                if shares_input.lower() == 'cancel':
+                    print("❌ Operation cancelled. Returning to main menu...")
+                    return
+                if shares_input.lower() == 'back':
+                    step_index -= 1
+                    continue
+
+                try:
+                    data['shares'] = float(shares_input)
+                    step_index += 1
+                except ValueError:
+                    print("❌ Invalid input. Please enter a valid number.")
+
+        # Insert into the database
         cursor.execute("""
             INSERT INTO stocks (stock_name, stock_ticker, shares, current_value)
             VALUES (?, ?, ?, ?)
-        """, (stock_ticker, stock_ticker, shares, stock_price))
+        """, (data['stock_name'], data['stock_ticker'], data['shares'], data['current_value']))
         connection.commit()
-        print(f"✅ Added {shares} shares of {stock_ticker} at ${stock_price:.2f} per share.")
+        print(f"✅ {data['stock_name']} ({data['stock_ticker']}) added successfully with {data['shares']} shares at ${data['current_value']:.2f} per share.")
 
     except sqlite3.Error as e:
         print("❌ Error adding stock:", e)
     finally:
         connection.close()
 
-
 def edit_stock():
     """
-    Edit an existing stock entry with live price validation.
+    Edit an existing stock entry with full 'back' and 'cancel' navigation support.
     """
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        # Display existing stocks
-        cursor.execute("SELECT stock_id, stock_ticker, shares FROM stocks")
-        stocks = cursor.fetchall()
-        print("\n===== Stocks =====")
-        for stock_id, stock_ticker, shares in stocks:
-            print(f"ID: {stock_id}, Ticker: {stock_ticker}, Shares: {shares:.2f}")
+        while True:
+            # Display all stocks
+            cursor.execute("SELECT stock_id, stock_ticker, shares, current_value FROM stocks")
+            stocks = cursor.fetchall()
+            print("\n===== Stocks =====")
+            for stock_id, stock_ticker, shares, current_value in stocks:
+                print(f"ID: {stock_id}, Ticker: {stock_ticker.upper()}, Shares: {shares:.2f}, Price: ${current_value:.2f}")
 
-        # Select stock to edit
-        stock_id = get_valid_id("\nEnter the ID of the stock to edit (or type 'cancel' to go back): ", "stocks", "stock_id")
-        if stock_id is None:
-            return  # User canceled
+            stock_id_input = input("Enter ID of stock to edit (or type 'back'/'cancel'): ").strip().lower()
+            if stock_id_input == "cancel":
+                print("Returning to main menu...")
+                return
+            if stock_id_input == "back":
+                continue
+            if not stock_id_input.isdigit():
+                print("❌ Invalid input. Please enter a numeric ID.")
+                continue
 
-        # Retrieve existing ticker
-        cursor.execute("SELECT stock_ticker FROM stocks WHERE stock_id = ?", (stock_id,))
-        stock_ticker = cursor.fetchone()[0]
+            stock_id = int(stock_id_input)
+            cursor.execute("SELECT stock_ticker FROM stocks WHERE stock_id = ?", (stock_id,))
+            result = cursor.fetchone()
+            if not result:
+                print("❌ Invalid stock ID.")
+                continue
 
-        # Get latest price
-        new_value = get_stock_price(stock_ticker)
-        if new_value is None:
-            print("❌ Error fetching live price. Please try again later.")
+            original_ticker = result[0].upper()
+
+            # Fetch the new live price first, before asking for shares
+            new_price = get_stock_price(original_ticker)
+            if not new_price:
+                print(f"❌ Failed to fetch latest stock price for {original_ticker}. Try again later.")
+                return
+
+            while True:
+                new_shares_input = input("Enter new number of shares or 'back'/'cancel': ").strip().lower()
+                if new_shares_input == "cancel":
+                    print("Operation cancelled.")
+                    return
+                if new_shares_input == "back":
+                    break  # go back to ID selection
+
+                try:
+                    new_shares = float(new_shares_input)
+                    break
+                except ValueError:
+                    print("❌ Invalid input. Please enter a number.")
+
+            # If user typed "back", skip the update logic
+            if new_shares_input == "back":
+                continue
+
+            # Update database
+            cursor.execute("""
+                UPDATE stocks SET shares = ?, current_value = ?
+                WHERE stock_id = ?
+            """, (new_shares, new_price, stock_id))
+            connection.commit()
+            print(f"✅ Stock updated successfully! New price for {original_ticker}: ${new_price:.2f}")
             return
-
-        # Get valid number of shares
-        new_shares = get_valid_float("Enter new number of shares: ")
-        if new_shares is None:
-            return
-
-        # Update stock details
-        cursor.execute("""
-            UPDATE stocks
-            SET shares = ?, current_value = ?
-            WHERE stock_id = ?
-        """, (new_shares, new_value, stock_id))
-        connection.commit()
-        print(f"✅ Updated {stock_ticker}: {new_shares} shares at ${new_value:.2f} per share.")
 
     except sqlite3.Error as e:
         print("❌ Error updating stock:", e)
     finally:
         connection.close()
 
+
 def delete_stock():
     connection = sqlite3.connect('database/finance_dashboard.db')
     cursor = connection.cursor()
 
     try:
-        cursor.execute("SELECT stock_id, stock_name, shares, current_value FROM stocks")
-        stocks = cursor.fetchall()
-        print("\n===== Stocks =====")
-        for stock_id, stock_name, shares, current_value in stocks:
-            print(f"ID: {stock_id}, Name: {stock_name}, Shares: {shares:.2f}, Value: ${current_value:.2f}")
+        while True:
+            cursor.execute("SELECT stock_id, stock_ticker, shares FROM stocks")
+            stocks = cursor.fetchall()
+            print("\n===== Stocks =====")
+            for stock_id, ticker, shares in stocks:
+                print(f"ID: {stock_id}, Ticker: {ticker}, Shares: {shares:.2f}")
 
-        stock_id = get_valid_id("\nEnter the ID of the stock to delete (or type 'cancel' to go back): ", "stocks", "stock_id")
-        if stock_id is None:
-            return
+            stock_id = input("Enter stock ID to delete (or 'back'/'cancel'): ").strip().lower()
+            if stock_id == 'cancel':
+                print("❌ Operation cancelled.")
+                return
+            if stock_id == 'back':
+                continue
+            if not stock_id.isdigit():
+                print("❌ Invalid input. Please enter a numeric ID.")
+                continue
 
-        cursor.execute("DELETE FROM stocks WHERE stock_id = ?", (stock_id,))
-        connection.commit()
-        print("Stock deleted successfully!")
+            stock_id = int(stock_id)
+            cursor.execute("SELECT * FROM stocks WHERE stock_id = ?", (stock_id,))
+            if not cursor.fetchone():
+                print("❌ Stock ID not found.")
+                continue
+
+            confirm = input(f"Are you sure you want to delete stock ID {stock_id}? (yes/no/back): ").lower().strip()
+            if confirm == 'back':
+                continue
+            if confirm != 'yes':
+                print("❌ Deletion cancelled.")
+                continue
+
+            cursor.execute("DELETE FROM stocks WHERE stock_id = ?", (stock_id,))
+            connection.commit()
+            print(f"✅ Stock ID {stock_id} deleted.")
+            break
 
     except sqlite3.Error as e:
-        print("Error deleting stock:", e)
+        print("❌ Error deleting stock:", e)
     finally:
         connection.close()
