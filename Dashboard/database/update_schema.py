@@ -29,3 +29,24 @@ except sqlite3.Error as e:
 
 finally:
     connection.close()
+
+
+import sqlite3
+
+DB_PATH = "finance_dashboard.db"
+
+conn = sqlite3.connect(DB_PATH)
+cursor = conn.cursor()
+
+cursor.execute("PRAGMA table_info(cryptos)")
+columns = [row[1] for row in cursor.fetchall()]
+
+if "coin_id" not in columns:
+    print("🔧 Adding column 'coin_id' to cryptos...")
+    cursor.execute("ALTER TABLE cryptos ADD COLUMN coin_id TEXT")
+    conn.commit()
+    print("✅ Column 'coin_id' added successfully.")
+else:
+    print("✅ Column 'coin_id' already exists.")
+
+conn.close()
