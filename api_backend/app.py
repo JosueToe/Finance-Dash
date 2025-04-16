@@ -8,7 +8,7 @@ from routes.bank import bank_bp
 from routes.salary import salary_bp
 from routes.expenses import expenses_bp
 from routes.goals import goals_bp
-
+from routes.dashboard import dashboard_bp
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -20,6 +20,7 @@ app.register_blueprint(bank_bp)
 app.register_blueprint(salary_bp)
 app.register_blueprint(expenses_bp)
 app.register_blueprint(goals_bp)
+app.register_blueprint(dashboard_bp)
 
 if __name__ == '__main__':
     app.run(debug=True)
