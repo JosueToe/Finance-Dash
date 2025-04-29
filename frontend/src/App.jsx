@@ -6,18 +6,21 @@ import CryptoPage from './pages/CryptoPage';
 import StocksPage from './pages/StocksPage';
 import ExpensesPage from './pages/ExpensesPage';
 import GoalsPage from './pages/GoalsPage';
+import IncomePage from "./pages/IncomePage";
 
 function App() {
   return (
     <Router>
       <nav style={{ padding: "1rem", backgroundColor: "#f5f5f5" }}>
-        <Link to="/" style={{ marginRight: "1rem" }}>Dashboard</Link>
-        <Link to="/bank" style={{ marginRight: "1rem" }}>Bank</Link>
-        <Link to="/crypto" style={{ marginRight: "1rem" }}>Crypto</Link>
-        <Link to="/stocks" style={{ marginRight: "1rem" }}>Stocks</Link>
-        <Link to="/expenses" style={{ marginRight: "1rem" }}>Expenses</Link>
-        <Link to="/goals">Goals</Link>
-      </nav>
+  <Link to="/" style={{ marginRight: "1rem" }}>Dashboard</Link>
+  <Link to="/bank" style={{ marginRight: "1rem" }}>Bank</Link>
+  <Link to="/crypto" style={{ marginRight: "1rem" }}>Crypto</Link>
+  <Link to="/stocks" style={{ marginRight: "1rem" }}>Stocks</Link>
+  <Link to="/expenses" style={{ marginRight: "1rem" }}>Expenses</Link>
+  <Link to="/income" style={{ marginRight: "1rem" }}>Income</Link> {/* ✅ Added this */}
+  <Link to="/goals">Goals</Link>
+</nav>
+
 
       <div style={{ padding: "2rem" }}>
         <Routes>
@@ -27,6 +30,7 @@ function App() {
           <Route path="/stocks" element={<StocksPage />} />
           <Route path="/expenses" element={<ExpensesPage />} />
           <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/income" element={<IncomePage />} />
         </Routes>
       </div>
     </Router>
