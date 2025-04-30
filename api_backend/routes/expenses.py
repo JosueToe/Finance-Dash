@@ -1,5 +1,3 @@
-# api_backend/routes/expenses.py
-
 from flask import Blueprint, jsonify, request
 import sqlite3
 import os
@@ -14,17 +12,16 @@ def get_expenses():
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT expense_id, name, category, frequency, amount FROM expenses")
+        cursor.execute("SELECT expense_id, category, frequency, amount FROM expenses")
         rows = cursor.fetchall()
         conn.close()
 
         expenses = [
             {
                 "expense_id": row[0],
-                "name": row[1],
-                "category": row[2],
-                "frequency": row[3],
-                "amount": row[4]
+                "category": row[1],
+                "frequency": row[2],
+                "amount": row[3]
             }
             for row in rows
         ]
@@ -37,7 +34,7 @@ def get_expenses():
 def add_expense():
     try:
         data = request.get_json()
-        required_fields = ['name', 'category', 'frequency', 'amount']
+        required_fields = ['category', 'frequency', 'amount']
 
         for field in required_fields:
             if field not in data:
@@ -46,10 +43,9 @@ def add_expense():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO expenses (name, category, frequency, amount)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO expenses (category, frequency, amount)
+            VALUES (?, ?, ?)
         """, (
-            data['name'],
             data['category'],
             data['frequency'],
             data['amount']
@@ -66,7 +62,7 @@ def add_expense():
 def update_expense(expense_id):
     try:
         data = request.get_json()
-        fields = ['name', 'category', 'frequency', 'amount']
+        fields = ['category', 'frequency', 'amount']
         updates = [f"{field} = ?" for field in fields if field in data]
 
         if not updates:

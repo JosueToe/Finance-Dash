@@ -77,10 +77,11 @@ const ExpensesPage = () => {
     <div>
       <h1>Expenses</h1>
 
+      {/* Add Expense Form */}
       <form onSubmit={handleAdd} style={{ marginBottom: "2rem" }}>
         <input
           type="text"
-          placeholder="Category"
+          placeholder="Category (e.g., Rent)"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           required
@@ -88,7 +89,7 @@ const ExpensesPage = () => {
         />
         <input
           type="text"
-          placeholder="Frequency (Monthly, Weekly, Yearly)"
+          placeholder="Frequency (e.g., Monthly)"
           value={frequency}
           onChange={(e) => setFrequency(e.target.value)}
           required
@@ -105,27 +106,31 @@ const ExpensesPage = () => {
         <button type="submit">Add Expense</button>
       </form>
 
+      {/* Expenses Table */}
       <table border="1" cellPadding="10">
         <thead>
           <tr>
-            <th>Expense ID</th>
             <th>Category</th>
             <th>Frequency</th>
-            <th>Amount ($)</th>
+            <th>Amount</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {expenses.map((expense) => (
             <tr key={expense.expense_id}>
-              <td>{expense.expense_id}</td>
-
               <td>{editingId === expense.expense_id ? (
-                <input value={editCategory} onChange={(e) => setEditCategory(e.target.value)} />
+                <input
+                  value={editCategory}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                />
               ) : expense.category}</td>
 
               <td>{editingId === expense.expense_id ? (
-                <input value={editFrequency} onChange={(e) => setEditFrequency(e.target.value)} />
+                <input
+                  value={editFrequency}
+                  onChange={(e) => setEditFrequency(e.target.value)}
+                />
               ) : expense.frequency}</td>
 
               <td>{editingId === expense.expense_id ? (

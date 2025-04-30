@@ -44,14 +44,14 @@ try:
     )
     """)
 
-    # Expenses
+    cursor.execute("DROP TABLE IF EXISTS expenses")
+
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS expenses (
-        expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        category TEXT NOT NULL,
-        frequency TEXT NOT NULL,
-        amount REAL NOT NULL
+    CREATE TABLE expenses (
+    expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    frequency TEXT NOT NULL,
+    amount REAL NOT NULL
     )
     """)
 

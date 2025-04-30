@@ -2,28 +2,37 @@ import React, { useEffect, useState } from "react";
 import api from "../services/api";
 
 const DashboardPage = () => {
-  const [data, setData] = useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    totalNetWorth: 0,
+    totalIncome: 0,
+    totalExpenses: 0,
+    totalBankBalance: 0,
+    totalStockValue: 0,
+    totalCryptoValue: 0,
+    totalSalary: 0,
+    totalDebt: 0,
+    goalTarget: null,
+    goalProgress: null
+  });
 
   useEffect(() => {
     api.get("/dashboard")
-      .then((response) => {
-        setData(response.data);
-      })
-      .catch((error) => {
-        console.error("Error fetching dashboard data:", error);
-      });
+      .then(res => setDashboardData(res.data))
+      .catch(err => console.error("Error loading dashboard:", err));
   }, []);
 
-  if (!data) return <div>Loading...</div>;
-
   return (
-    <div style={{ padding: "2rem" }}>
+    <div>
       <h1>Finance Dashboard</h1>
-      <p><strong>Total Net Worth:</strong> ${data.total_net_worth}</p>
-      <p><strong>Total Monthly Income:</strong> ${data.total_monthly_income}</p>
-      <p><strong>Total Monthly Expenses:</strong> ${data.total_monthly_expenses}</p>
-      <p><strong>Goal Target:</strong> ${data.goal_target || "No goal set"}</p>
-      <p><strong>Goal Progress:</strong> {data.goal_progress ? `${data.goal_progress}%` : "No goal"}</p>
+
+      <h2>Total Net Worth: ${dashboardData.total_net_worth}</h2>
+<p>Total Monthly Income: ${dashboardData.total_monthly_income}</p>
+<p>Total Monthly Expenses: ${dashboardData.total_monthly_expenses}</p>
+<p>Bank Balance: ${dashboardData.bank_balance}</p>
+<p>Investments: ${dashboardData.investments}</p>
+<p>Goal Target: ${dashboardData.goal_target ?? "No goal set"}</p>
+<p>Goal Progress: {dashboardData.goal_progress ?? "No goal"}%</p>
+
     </div>
   );
 };
