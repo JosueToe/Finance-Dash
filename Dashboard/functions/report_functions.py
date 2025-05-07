@@ -1,5 +1,13 @@
 import sqlite3  # Import SQLite library to interact with the database.
 from datetime import datetime  # Import datetime to work with date-related operations.
+from functions.validate_functions import (
+    get_valid_id, get_valid_float, get_valid_int, 
+    get_valid_text, get_valid_frequency, get_valid_date
+)
+
+
+
+
 
 def expense_breakdown():
     """
